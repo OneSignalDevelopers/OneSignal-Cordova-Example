@@ -25,6 +25,8 @@
  * THE SOFTWARE.
  */
  
+var addedObservers = false;
+
 var app = {
     // Application Constructor
     initialize: function() {
@@ -72,7 +74,22 @@ var app = {
           .inFocusDisplaying(window.plugins.OneSignal.OSInFocusDisplayOption.InAppAlert)
           .iOSSettings(iosSettings)
           .endInit();
-        
+
+        if (addedObservers == false) {
+            addedObservers = true;
+
+            window.plugins.OneSignal.addEmailSubscriptionObserver(function(stateChanges) {
+                console.log("Email subscription state changed: \n" + JSON.stringify(stateChanges, null, 2));
+            });
+
+            window.plugins.OneSignal.addSubscriptionObserver(function(stateChanges) {
+                console.log("Push subscription state changed: " + JSON.stringify(stateChanges, null, 2));
+            });
+
+            window.plugins.OneSignal.addPermissionObserver(function(stateChanges) {
+                console.log("Push permission state changed: " + JSON.stringify(stateChanges, null, 2));
+            });
+        }
         //Call syncHashedEmail anywhere in your app if you have the user's email.
         //This improves the effectiveness of OneSignal's "best-time" notification scheduling feature.
         //window.plugins.OneSignal.syncHashedEmail(userEmail);
@@ -134,7 +151,7 @@ function postNotification() {
             },
             function (failedResponse) {
                 console.log("Notification Post Failed: ", failedResponse);
-                alert("Notification Post Failed:\n" + JSON.stringify(failedResponse));
+                alert("Notification Post Failed:\n" + JSON.stringify(failedResponse, null, 2));
             }
         );
     });
@@ -142,6 +159,24 @@ function postNotification() {
 
 function setSubscription() {
     window.plugins.OneSignal.setSubscription(false);
+}
+
+function setEmail() {
+    console.log("Setting email: " + document.getElementById("email").value);
+    window.plugins.OneSignal.setEmail(document.getElementById("email").value, function() {
+        console.log("Successfully set email");
+    }, function(error) {
+        alert("Encountered an error setting email: \n" + JSON.stringify(error, null, 2));
+    });
+}
+
+function logoutEmail() {
+    console.log("Logging out of email");
+    window.plugins.OneSignal.logoutEmail(function(successResponse) {
+        console.log("Successfully logged out of email");
+    }, function(error) {
+        alert("Failed to log out of email with error: \n" + JSON.stringify(error, null, 2));
+    });
 }
 
 app.initialize();
