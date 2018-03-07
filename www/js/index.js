@@ -26,6 +26,7 @@
  */
  
 var addedObservers = false;
+var locationShared = true;
 
 var app = {
     // Application Constructor
@@ -159,6 +160,14 @@ function postNotification() {
 
 function setSubscription() {
     window.plugins.OneSignal.setSubscription(false);
+}
+
+function setLocationShared() {
+   locationShared = !locationShared;
+
+   window.plugins.OneSignal.setLocationShared(locationShared);
+
+   document.getElementById("locationSharedButton").value = locationShared ? "Set Location Shared (true)" : "Set Location Shared (false)";
 }
 
 function setEmail() {
