@@ -179,6 +179,19 @@ function logoutEmail() {
     });
 }
 
+function setExternalId() {
+   let externalId = document.getElementById("externalId").value;
+   console.log("Setting external ID to " + externalId);
+
+   window.plugins.OneSignal.setExternalUserId(externalId);
+}
+
+function removeExternalId() {
+   console.log("Removing external ID");
+
+   window.plugins.OneSignal.removeExternalUserId();
+}
+
 app.initialize();
 
 
