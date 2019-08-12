@@ -99,7 +99,7 @@ var app = {
 function registerForPushNotification() {
     console.log("Register button pressed");
     window.plugins.OneSignal.registerForPushNotifications();
-    // Only works if user previously subscribed and you used setSubscription(false) below
+    // Push notifications only work if user previously subscribed and you set setSubscription(true)
     window.plugins.OneSignal.setSubscription(true);
 }
 
