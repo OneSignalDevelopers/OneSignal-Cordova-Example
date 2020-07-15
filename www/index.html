@@ -37,7 +37,9 @@
         <h1>OneSignal Example</h1>
         
         <form>
-            <input type="button" value="Register For Push Notifications iOS" onclick="registerForPushNotification()" />
+            <input type="button" value="Trigger outcome with value 10" onclick="triggerOutcome()" />
+            <br>
+            <input type="button" value="Trigger In-App Message" onclick="triggerIAM()" />
             <br>
             <input type="button" value="Get Ids" onclick="getIds()" />
             <br>
@@ -55,11 +57,7 @@
             <br>
             <input type="button" value="Prompt Location" onclick="promptLocation()" />
             <br>
-            <input type="button" value="Sync Hashed Email" onclick="syncHashedEmail()" />
-            <br>
             <input type="button" value="Post Notification" onclick="postNotification()" />
-            <br>
-            <input type="button" value="Set Subscription(false)" onclick="setSubscription()" />
             <br>
             <input type="text" placeholder="External User ID" name="externalId" id="externalId"/>
             <br>

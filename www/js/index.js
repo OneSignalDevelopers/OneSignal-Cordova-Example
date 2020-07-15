@@ -52,26 +52,31 @@ var app = {
 
         console.log('Received Event: ' + id);
 
-        // OneSignal Initialization
-        // Enable to debug issues.
-        // window.plugins.OneSignal.setLogLevel({logLevel: 4, visualLevel: 4});
+        //START ONESIGNAL CODE
+        //Remove this method to stop OneSignal Debugging
+        window.plugins.OneSignal.setLogLevel({logLevel: 6, visualLevel: 0});
   
+        var notificationOpenedCallback = function(jsonData) {
+            var notificationData = JSON.stringify(jsonData)
+            console.log('notificationOpenedCallback: ' + notificationData);
+            var notificationID = jsonData.notification.payload.notificationID;
+            console.log('notificationID: ' + notificationID);
+            var notificationData = jsonData.notification.payload.additionalData.foo;
+            console.log('notificationData: ' + notificationData);
+        };
         // Set your iOS Settings
         var iosSettings = {};
         iosSettings["kOSSettingsKeyAutoPrompt"] = false;
-        iosSettings["kOSSettingsKeyInAppLaunchURL"] = true;
-
+        iosSettings["kOSSettingsKeyInAppLaunchURL"] = false;
+               
         window.plugins.OneSignal
-          .startInit("b2f7f966-d8cc-11e4-bed1-df8f05be55ba")
+          .startInit("3beb3078-e0f1-4629-af17-fde833b9f716")
           .handleNotificationReceived(function(jsonData) {
             alert("Notification received: \n" + JSON.stringify(jsonData));
             console.log('Did I receive a notification: ' + JSON.stringify(jsonData));
           })
-          .handleNotificationOpened(function(jsonData) {
-            alert("Notification opened: \n" + JSON.stringify(jsonData));
-            console.log('didOpenRemoteNotificationCallBack: ' + JSON.stringify(jsonData));
-          })
-          .inFocusDisplaying(window.plugins.OneSignal.OSInFocusDisplayOption.InAppAlert)
+          .handleNotificationOpened(notificationOpenedCallback)
+          .inFocusDisplaying(window.plugins.OneSignal.OSInFocusDisplayOption.Notification)
           .iOSSettings(iosSettings)
           .endInit();
 
@@ -90,25 +95,31 @@ var app = {
                 console.log("Push permission state changed: " + JSON.stringify(stateChanges, null, 2));
             });
         }
-        //Call syncHashedEmail anywhere in your app if you have the user's email.
-        //This improves the effectiveness of OneSignal's "best-time" notification scheduling feature.
-        //window.plugins.OneSignal.syncHashedEmail(userEmail);
+        // The promptForPushNotificationsWithUserResponse function will show the iOS push notification prompt. 
+        // We recommend removing the following code and instead using an In-App Message to prompt for notification permission (See step 6)
+        window.plugins.OneSignal.promptForPushNotificationsWithUserResponse(function(accepted) {
+            console.log("User accepted notifications: " + accepted);
+        });
     }
 };
 
-function registerForPushNotification() {
-    console.log("Register button pressed");
-    window.plugins.OneSignal.registerForPushNotifications();
-    // Only works if user previously subscribed and you used setSubscription(false) below
-    window.plugins.OneSignal.setSubscription(true);
+function triggerOutcome() {
+    window.plugins.OneSignal.sendOutcomeWithValue("cordova", 10, function () {
+        console.log("outcomes sent log");
+    });
+}
+
+function triggerIAM() {
+    console.log("Triggering any active IAM with Trigger value birthday is true");
+    window.plugins.OneSignal.addTrigger("birthday", "true");
 }
 
 function getIds() {
-    window.plugins.OneSignal.getIds(function(ids) {
-        document.getElementById("OneSignalUserId").innerHTML = "UserId: " + ids.userId;
-        document.getElementById("OneSignalPushToken").innerHTML = "PushToken: " + ids.pushToken;
-        console.log('getIds: ' + JSON.stringify(ids));
-        alert("userId = " + ids.userId + "\npushToken = " + ids.pushToken);
+    window.plugins.OneSignal.getPermissionSubscriptionState(function(status) {
+        document.getElementById("OneSignalUserId").innerHTML = "UserId: " + status.subscriptionStatus.userId;
+        document.getElementById("OneSignalPushToken").innerHTML = "PushToken: " + status.subscriptionStatus.pushToken;
+        console.log('Player ID: ' + status.subscriptionStatus.userId);
+        alert('Player ID: ' + status.subscriptionStatus.userId + "\npushToken = " + status.subscriptionStatus.pushToken);
     });
 }
 
@@ -136,14 +147,10 @@ function promptLocation() {
     // <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
 }
 
-function syncHashedEmail() {
-    window.plugins.OneSignal.syncHashedEmail("example@google.com");
-    alert("Email synced");
-}
-
 function postNotification() {
     window.plugins.OneSignal.getIds(function(ids) {
         var notificationObj = { contents: {en: "message body"},
+        data: {"foo": "bar"},
                           include_player_ids: [ids.userId]};
         window.plugins.OneSignal.postNotification(notificationObj,
             function(successResponse) {
@@ -155,10 +162,6 @@ function postNotification() {
             }
         );
     });
-}
-
-function setSubscription() {
-    window.plugins.OneSignal.setSubscription(false);
 }
 
 function setEmail() {
