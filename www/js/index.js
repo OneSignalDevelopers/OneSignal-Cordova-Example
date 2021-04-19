@@ -25,6 +25,7 @@
  * THE SOFTWARE.
  */
  
+
 var addedObservers = false;
 
 var app = {
@@ -52,33 +53,37 @@ var app = {
 
         console.log('Received Event: ' + id);
 
-        //START ONESIGNAL CODE
         //Remove this method to stop OneSignal Debugging
         window.plugins.OneSignal.setLogLevel({logLevel: 6, visualLevel: 0});
-  
+
         var notificationOpenedCallback = function(jsonData) {
             var notificationData = JSON.stringify(jsonData)
             console.log('notificationOpenedCallback: ' + notificationData);
-            var notificationID = jsonData.notification.payload.notificationID;
+            var notificationID = jsonData.notification.notificationId;
             console.log('notificationID: ' + notificationID);
-            var notificationData = jsonData.notification.payload.additionalData.foo;
-            console.log('notificationData: ' + notificationData);
+            alert("Notification opened: \n" + JSON.stringify(jsonData));
         };
-        // Set your iOS Settings
-        var iosSettings = {};
-        iosSettings["kOSSettingsKeyAutoPrompt"] = false;
-        iosSettings["kOSSettingsKeyInAppLaunchURL"] = false;
+
+        var iamClickCallback = function(jsonData) {
+            var iamClickAction = JSON.stringify(jsonData)
+            console.log('iamClickCallback: ' + iamClickAction);
+            alert("IAM click action: \n" + iamClickAction);
+        };
+
+        window.plugins.OneSignal.setAppId("77e32082-ea27-42e3-a898-c72e141824ef")
                
-        window.plugins.OneSignal
-          .startInit("3beb3078-e0f1-4629-af17-fde833b9f716")
-          .handleNotificationReceived(function(jsonData) {
-            alert("Notification received: \n" + JSON.stringify(jsonData));
-            console.log('Did I receive a notification: ' + JSON.stringify(jsonData));
-          })
-          .handleNotificationOpened(notificationOpenedCallback)
-          .inFocusDisplaying(window.plugins.OneSignal.OSInFocusDisplayOption.Notification)
-          .iOSSettings(iosSettings)
-          .endInit();
+        window.plugins.OneSignal.handleNotificationWillShowInForeground(function(notificationReceivedEvent) {
+            console.log('Calling completeNotification with: ' + JSON.stringify(notificationReceivedEvent));
+            console.log('Calling completeNotification notification with: ' + JSON.stringify(notificationReceivedEvent.notification));
+            
+            notificationReceivedEvent.complete(notificationReceivedEvent.notification);
+        });
+
+        window.plugins.OneSignal.handleNotificationOpened(notificationOpenedCallback);
+        window.plugins.OneSignal.handleInAppMessageClicked(iamClickCallback);
+
+        window.plugins.OneSignal.disablePush(false);
+        // window.plugins.OneSignal.pauseInAppMessages(true);
 
         if (addedObservers == false) {
             addedObservers = true;
@@ -100,6 +105,16 @@ var app = {
         window.plugins.OneSignal.promptForPushNotificationsWithUserResponse(function(accepted) {
             console.log("User accepted notifications: " + accepted);
         });
+
+        window.plugins.OneSignal.provideUserConsent(true);
+        window.plugins.OneSignal.userProvidedPrivacyConsent(function(stateChanges) {
+            console.log("userProvidedPrivacyConsent: " + JSON.stringify(stateChanges));
+        });
+
+        // Android methods
+        // window.plugins.OneSignal.removeNotification(100);
+        // window.plugins.OneSignal.removeGroupedNotifications("test_group");
+        //window.plugins.OneSignal.clearOneSignalNotifications();
     }
 };
 
@@ -107,6 +122,21 @@ function triggerOutcome() {
     window.plugins.OneSignal.sendOutcomeWithValue("cordova", 10, function () {
         console.log("outcomes sent log");
     });
+
+    window.plugins.OneSignal.sendOutcome("cordova_outcome", function () {
+        console.log("outcomes sent log");
+    });
+    
+    window.plugins.OneSignal.sendUniqueOutcome("cordova_unique_outcome2", function () {
+        console.log("outcomes sent log");
+    });
+    window.plugins.OneSignal.sendUniqueOutcome("cordova_unique_outcome2", function () {
+        console.log("outcomes sent log");
+    });
+    // window.plugins.OneSignal.removeTriggerForKey("birthday");
+    // window.plugins.OneSignal.getTriggerValueForKey("birthday", function(values) {
+    //     alert('getTriggerValueForKey Received: ' + JSON.stringify(values));
+    // });
 }
 
 function triggerIAM() {
@@ -115,12 +145,17 @@ function triggerIAM() {
 }
 
 function getIds() {
-    window.plugins.OneSignal.getPermissionSubscriptionState(function(status) {
-        document.getElementById("OneSignalUserId").innerHTML = "UserId: " + status.subscriptionStatus.userId;
-        document.getElementById("OneSignalPushToken").innerHTML = "PushToken: " + status.subscriptionStatus.pushToken;
-        console.log('Player ID: ' + status.subscriptionStatus.userId);
-        alert('Player ID: ' + status.subscriptionStatus.userId + "\npushToken = " + status.subscriptionStatus.pushToken);
+    window.plugins.OneSignal.getDeviceState(function(stateChanges) {
+        alert('getDeviceState Received: ' + JSON.stringify(stateChanges));
+        console.log('OneSignal getDeviceState: ' + JSON.stringify(stateChanges));
     });
+
+    // window.plugins.OneSignal.getPermissionSubscriptionState(function(status) {
+    //     document.getElementById("OneSignalUserId").innerHTML = "UserId: " + status.subscriptionStatus.userId;
+    //     document.getElementById("OneSignalPushToken").innerHTML = "PushToken: " + status.subscriptionStatus.pushToken;
+    //     console.log('Player ID: ' + status.subscriptionStatus.userId);
+    //     alert('Player ID: ' + status.subscriptionStatus.userId + "\npushToken = " + status.subscriptionStatus.pushToken);
+    // });
 }
 
 function sendTags() {
@@ -140,11 +175,17 @@ function deleteTags() {
 }
 
 function promptLocation() {
+    window.plugins.OneSignal.setLocationShared(true);
     window.plugins.OneSignal.promptLocation();
+    window.plugins.OneSignal.isLocationShared(function(shared) {
+        alert('isLocationShared: ' + JSON.stringify(shared));
+    });
     // iOS - add CoreLocation.framework and add to plist: NSLocationUsageDescription and NSLocationWhenInUseUsageDescription
     // android - add one of the following Android Permissions:
     // <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     // <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    // Add under build.gradle dependencies
+    // implementation 'com.google.android.gms:play-services-location:[17.0.0, 17.99.99]'
 }
 
 function postNotification() {
@@ -196,36 +237,3 @@ function removeExternalId() {
 }
 
 app.initialize();
-
-
-
-
-// // Add to index.js or the first page that loads with your app.
-// // For Intel XDK and please add this to your app.js.
-
-// document.addEventListener('deviceready', function () {
-//   // Enable to debug issues.
-//   // window.plugins.OneSignal.setLogLevel({logLevel: 4, visualLevel: 4});
-  
-//   var notificationOpenedCallback = function(jsonData) {
-//     console.log('notificationOpenedCallback: ' + JSON.stringify(jsonData));
-//   };
-
-//   window.plugins.OneSignal
-//           .startInit("d368162e-7c4e-48b0-bc7c-b82ba80d4981")
-//           .handleNotificationReceived(function(jsonData) {
-//             alert("Notification received: \n" + JSON.stringify(jsonData));
-//             console.log('Did I receive a notification: ' + JSON.stringify(jsonData));
-//           })
-//           .handleNotificationOpened(function(jsonData) {
-//             alert("Notification opened: \n" + JSON.stringify(jsonData));
-//             console.log('didOpenRemoteNotificationCallBack: ' + JSON.stringify(jsonData));
-//           })
-//           .inFocusDisplaying(window.plugins.OneSignal.OSInFocusDisplayOption.InAppAlert)
-//           .iOSSettings(iosSettings)
-//           .endInit();
-  
-//   // Call syncHashedEmail anywhere in your app if you have the user's email.
-//   // This improves the effectiveness of OneSignal's "best-time" notification scheduling feature.
-//   // window.plugins.OneSignal.syncHashedEmail(userEmail);
-// }, false);
